@@ -1,0 +1,308 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  EDITOR
+  TRAINER
+  MEMBER
+}
+
+enum UserStatus {
+  PENDING
+  ACTIVE
+  INACTIVE
+  REJECTED
+}
+
+enum ArticleStatus {
+  DRAFT
+  PENDING
+  PUBLISHED
+  REJECTED
+  ARCHIVED
+}
+
+enum ArticleReviewAction {
+  SUBMITTED
+  APPROVED
+  REJECTED
+  REVISED
+  ARCHIVED
+}
+
+enum CommentStatus {
+  VISIBLE
+  HIDDEN
+  DELETED
+}
+
+enum MedalType {
+  GOLD
+  SILVER
+  BRONZE
+  NONE
+}
+
+model User {
+  id            String             @id @default(uuid())
+  fullName      String
+  email         String             @unique
+  passwordHash  String
+  googleId      String?            @unique
+  role          Role               @default(MEMBER)
+  status        UserStatus         @default(PENDING)
+  avatarUrl     String?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  articles      Article[]
+  articleReviews ArticleReview[]    @relation("ArticleReviewer")
+  comments      Comment[]           @relation("CommentAuthor")
+  hiddenComments Comment[]          @relation("CommentHiddenBy")
+  notifications Notification[]      @relation("NotificationReceiver")
+  notificationActors Notification[] @relation("NotificationActor")
+  articleLikes  ArticleLike[]
+  bookmarks     ArticleBookmark[]
+  athleteProfile AthleteProfile?
+  refreshTokens RefreshToken[]
+  passwordResetTokens PasswordResetToken[]
+}
+
+model Article {
+  id           String          @id @default(uuid())
+  title        String
+  slug         String          @unique
+  content      String
+  excerpt      String?
+  thumbnailUrl String?
+  category     String?
+  status       ArticleStatus   @default(DRAFT)
+  rejectionReason String?
+  approvedBy String?
+  isFeatured   Boolean         @default(false)
+  viewCount    Int             @default(0)
+  publishedAt  DateTime?
+  authorId     String
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  author        User              @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  
+  articleImages ArticleImages[]
+  tags         ArticleTag[]
+  reviews       ArticleReview[]
+  comments      Comment[]
+  likes         ArticleLike[]
+  bookmarks     ArticleBookmark[]
+  notifications Notification[]
+
+  @@index([authorId])
+  @@index([status, publishedAt])
+}
+
+model ArticleImages {
+  id        String   @id @default(uuid())
+  url       String
+  alt       String?
+  articleId String
+
+  article   Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@index([articleId])
+}
+
+model Tag {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique
+
+  articles  ArticleTag[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ArticleTag {
+  articleId String
+  tagId     String
+
+  article   Article @relation(fields: [articleId], references: [id])
+  tag       Tag     @relation(fields: [tagId], references: [id])
+
+  @@id([articleId, tagId])
+}
+
+model ArticleReview {
+  id         String              @id @default(uuid())
+  articleId  String
+  reviewerId String
+  action     ArticleReviewAction
+  note       String?
+  createdAt  DateTime            @default(now())
+
+  article  Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  reviewer User    @relation("ArticleReviewer", fields: [reviewerId], references: [id], onDelete: Cascade)
+
+  @@index([articleId])
+  @@index([reviewerId])
+}
+
+model Comment {
+  id           String        @id @default(uuid())
+  articleId    String
+  userId       String
+  parentId     String?
+  content      String
+  status       CommentStatus @default(VISIBLE)
+  hiddenById   String?
+  hiddenReason String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  user      User     @relation("CommentAuthor", fields: [userId], references: [id], onDelete: Cascade)
+  parent    Comment? @relation("CommentThread", fields: [parentId], references: [id], onDelete: SetNull)
+  replies   Comment[] @relation("CommentThread")
+  hiddenBy  User?    @relation("CommentHiddenBy", fields: [hiddenById], references: [id], onDelete: SetNull)
+  notifications Notification[]
+
+  @@index([articleId])
+  @@index([userId])
+  @@index([parentId])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  type      String
+  title     String
+  body      String
+  isRead    Boolean  @default(false)
+  articleId String?
+  commentId String?
+  actorId   String?
+  createdAt DateTime @default(now())
+
+  user    User     @relation("NotificationReceiver", fields: [userId], references: [id], onDelete: Cascade)
+  article Article? @relation(fields: [articleId], references: [id], onDelete: SetNull)
+  comment Comment? @relation(fields: [commentId], references: [id], onDelete: SetNull)
+  actor   User?    @relation("NotificationActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([userId, isRead])
+  @@index([articleId])
+  @@index([commentId])
+}
+
+model ArticleLike {
+  id        String   @id @default(uuid())
+  articleId String
+  userId    String
+  createdAt DateTime @default(now())
+
+  article Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([articleId, userId])
+  @@index([articleId])
+  @@index([userId])
+}
+
+model ArticleBookmark {
+  id        String   @id @default(uuid())
+  articleId String
+  userId    String
+  createdAt DateTime @default(now())
+
+  article Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([articleId, userId])
+  @@index([articleId])
+  @@index([userId])
+}
+
+model AthleteProfile {
+  id           String   @id @default(uuid())
+  userId        String   @unique
+  dateOfBirth   DateTime?
+  height        Float?
+  weight        Float?
+  club          String?
+  discipline    String?
+  currentBelt   String?
+  coachName     String?
+  bio           String?
+  isPublic      Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievements Achievement[]
+  belts        Belt[]
+}
+
+model Achievement {
+  id             String   @id @default(uuid())
+  athleteId      String
+  tournamentName String
+  level          String?
+  medal          MedalType @default(NONE)
+  year           Int
+  discipline     String?
+  location       String?
+  weightCategory String?
+  createdAt      DateTime @default(now())
+
+  athlete AthleteProfile @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+
+  @@index([athleteId])
+}
+
+model Belt {
+  id         String   @id @default(uuid())
+  athleteId  String
+  belt       String
+  achievedAt DateTime
+  examiner   String?
+  location   String?
+  createdAt  DateTime @default(now())
+
+  athlete AthleteProfile @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+
+  @@index([athleteId])
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  tokenHash String   @unique
+  userId    String
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  tokenHash String   @unique
+  userId    String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
