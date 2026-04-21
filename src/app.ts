@@ -10,6 +10,9 @@ import { errorHandler } from "./interface/http/middlewares/errorHandler";
 import { env } from "./infrastructure/config/env";
 import { AppError } from "./shared/AppError";
 import { tagRouter } from "./interface/http/routes/tagRoutes";
+import { commentRouter } from "./interface/http/routes/commentRoutes";
+import { uploadRouter } from "./interface/http/routes/uploadRoutes";
+import { profileRouter } from "./interface/http/routes/profileRoutes";
 
 const app = express();
 
@@ -33,6 +36,10 @@ app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/articles", articleRouter);
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/tags", tagRouter);
+app.use("/api/v1/articles/:id/comments", commentRouter);
+app.use("/api/v1/comments", commentRouter);
+app.use("/api/v1/uploads", uploadRouter);
+app.use("/api/v1/profile", profileRouter);
 
 app.use((_req, _res, next) => {
   next(new AppError("Route not found", 404));

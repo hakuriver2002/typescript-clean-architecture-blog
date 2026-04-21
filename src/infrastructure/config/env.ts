@@ -22,6 +22,11 @@ const envSchema = z.object({
   AUTH_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(15 * 60 * 1000),
   AUTH_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(20),
   LOGIN_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(5)
+  ,
+  SUPABASE_URL: z.string().url(),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
+  SUPABASE_STORAGE_BUCKET_ARTICLES: z.string().default("article-images"),
+  SUPABASE_STORAGE_BUCKET_AVATARS: z.string().default("avatar-images"),
 });
 
 const parsed = envSchema.safeParse(process.env);

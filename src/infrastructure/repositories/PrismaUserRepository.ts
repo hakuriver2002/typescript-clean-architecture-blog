@@ -9,6 +9,7 @@ export class PrismaUserRepository implements UserRepository {
       email: user.email,
       fullName: user.fullName,
       passwordHash: user.passwordHash,
+      avatarUrl: user.avatarUrl,
       role: user.role,
       status: user.status,
       createdAt: user.createdAt,
@@ -98,6 +99,17 @@ export class PrismaUserRepository implements UserRepository {
 
   async updateRole(userId: string, role: "ADMIN" | "EDITOR" | "TRAINER" | "MEMBER") {
     await prisma.user.update({ where: { id: userId }, data: { role } });
+  }
+
+  async updateProfile(userId: string, data: { fullName?: string; avatarUrl?: string | null }) {
+    await prisma.user.update({
+      where: { id: userId },
+      data,
+    });
+  }
+
+  async updateAvatarUrl(userId: string, avatarUrl: string) {
+    await prisma.user.update({ where: { id: userId }, data: { avatarUrl } });
   }
 
   async updatePassword(userId: string, passwordHash: string) {

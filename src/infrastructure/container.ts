@@ -43,11 +43,29 @@ import { GetArticleBySlugUseCase } from "../application/use-cases/article/GetArt
 import { ListMyArticlesUseCase } from "../application/use-cases/article/ListMyArticlesUseCase";
 import { ApproveArticleUseCase } from "../application/use-cases/article/ApproveArticleUseCase";
 import { RejectArticleUseCase } from "../application/use-cases/article/RejectArticleUseCase";
+import { PrismaCommentRepository } from "./repositories/PrismaCommentRepository";
+import { CreateCommentUseCase } from "../application/use-cases/comment/CreateCommentUseCase";
+import { DeleteCommentUseCase } from "../application/use-cases/comment/DeleteCommentUseCase";
+import { ListCommentsByArticleUseCase } from "../application/use-cases/comment/ListCommentsByArticleUseCase";
+import { ReplyCommentUseCase } from "../application/use-cases/comment/ReplyCommentUseCase";
+import { UploadImageUseCase } from "../application/use-cases/upload/UploadImageUseCase";
+import { SupabaseStorageRepository } from "./storage/SupabaseStorageRepository";
+import { SharpImageProcessor } from "./images/SharpImageProcessor";
+import { PrismaBookmarkRepository } from "./repositories/PrismaBookmarkRepository";
+import { GetMyProfileUseCase } from "../application/use-cases/profile/GetMyProfileUseCase";
+import { UpdateMyProfileUseCase } from "../application/use-cases/profile/UpdateMyProfileUseCase";
+import { ChangeMyPasswordUseCase } from "../application/use-cases/profile/ChangeMyPasswordUseCase";
+import { ListMyBookmarkedArticlesUseCase } from "../application/use-cases/profile/ListMyBookmarkedArticlesUseCase";
 
 const userRepository = new PrismaUserRepository();
 const articleRepository = new PrismaArticleRepository();
 // const postRepository = new PrismaPostRepository();
 const tagRepository = new PrismaTagRepository();
+const commentRepository = new PrismaCommentRepository();
+const bookmarkRepository = new PrismaBookmarkRepository();
+const storageRepository = new SupabaseStorageRepository();
+const imageProcessor = new SharpImageProcessor();
+const createCommentUseCase = new CreateCommentUseCase(commentRepository, articleRepository);
 const refreshTokenRepository = new PrismaRefreshTokenRepository();
 const passwordResetTokenRepository = new PrismaPasswordResetTokenRepository();
 const hashService = new BcryptService();
@@ -110,4 +128,22 @@ export const container = {
   deleteTagUseCase: new DeleteTagUseCase(tagRepository),
   getTagBySlugUseCase: new GetTagBySlugUseCase(tagRepository),
   getTagByNameUseCase: new GetTagByNameUseCase(tagRepository),
+
+  // ===Comment Usecase===
+  createCommentUseCase,
+  replyCommentUseCase: new ReplyCommentUseCase(
+    commentRepository,
+    createCommentUseCase,
+  ),
+  deleteCommentUseCase: new DeleteCommentUseCase(commentRepository),
+  listCommentsByArticleUseCase: new ListCommentsByArticleUseCase(commentRepository, articleRepository),
+
+  // ===Upload Usecase===
+  uploadImageUseCase: new UploadImageUseCase(storageRepository, imageProcessor, userRepository),
+
+  // ===Profile Usecase===
+  getMyProfileUseCase: new GetMyProfileUseCase(userRepository),
+  updateMyProfileUseCase: new UpdateMyProfileUseCase(userRepository),
+  changeMyPasswordUseCase: new ChangeMyPasswordUseCase(userRepository, hashService),
+  listMyBookmarkedArticlesUseCase: new ListMyBookmarkedArticlesUseCase(bookmarkRepository),
 };

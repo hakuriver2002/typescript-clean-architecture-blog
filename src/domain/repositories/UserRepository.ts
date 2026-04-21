@@ -27,6 +27,8 @@ export interface UserRepository {
   listPending(params: ListPendingUsersInput): Promise<{ users: User[]; total: number }>;
   updateStatus(userId: string, status: "PENDING" | "ACTIVE" | "INACTIVE" | "REJECTED"): Promise<void>;
   updateRole(userId: string, role: "ADMIN" | "EDITOR" | "TRAINER" | "MEMBER"): Promise<void>;
+  updateProfile(userId: string, data: { fullName?: string; avatarUrl?: string | null }): Promise<void>;
+  updateAvatarUrl(userId: string, avatarUrl: string): Promise<void>;
   updatePassword(userId: string, passwordHash: string): Promise<void>;
   findByStatus(status: "PENDING" | "ACTIVE" | "INACTIVE" | "REJECTED"): Promise<User[]>;
 }

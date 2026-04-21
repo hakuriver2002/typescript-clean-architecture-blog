@@ -14,8 +14,10 @@ import {
   submitArticleSchema,
   rejectArticleSchema,
 } from "../validators/articleValidators";
+import { commentRouter } from "./commentRoutes";
 
 const articleRouter = Router();
+articleRouter.use("/:articleId/comments", commentRouter);
 
 // Public articles
 articleRouter.get(

@@ -59,7 +59,7 @@ Posts:
 | Like / Bookmark | ✅ | ✅ | ✅ | ✅ | ❌ |
 | Athlete profile | ✅ | ✅ | ✅ | ✅ | ❌ (public-only) |
 
-RBAC helper is implemented in [rbac.ts](C:\Users\ASUS\Documents\New project\src\infrastructure\security\rbac.ts) and route guard middleware in [requirePermission.ts](C:\Users\ASUS\Documents\New project\src\interface\http\middlewares\requirePermission.ts).
+RBAC helper is implemented in [rbac.ts]
 
 ## Setup (backend)
 1. `npm install`
