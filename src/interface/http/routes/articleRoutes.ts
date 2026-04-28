@@ -9,10 +9,13 @@ import {
   deletePostSchema,
   getByIdSchema,
   getBySlugSchema,
+  listPublicArticlesQuerySchema,
   paginationQuerySchema,
   updateArticleSchema,
   submitArticleSchema,
   rejectArticleSchema,
+  toggleLikeSchema,
+  toggleBookmarkSchema,
 } from "../validators/articleValidators";
 import { commentRouter } from "./commentRoutes";
 
@@ -22,8 +25,20 @@ articleRouter.use("/:articleId/comments", commentRouter);
 // Public articles
 articleRouter.get(
   "/",
-  validate(paginationQuerySchema),
+  validate(listPublicArticlesQuerySchema),
   asyncHandler(articleController.listPublic.bind(articleController))
+);
+
+articleRouter.get(
+  "/featured",
+  validate(paginationQuerySchema),
+  asyncHandler(articleController.listFeatured.bind(articleController))
+);
+
+articleRouter.get(
+  "/trending",
+  validate(paginationQuerySchema),
+  asyncHandler(articleController.listTrending.bind(articleController))
 );
 
 articleRouter.get(
@@ -88,16 +103,32 @@ articleRouter.delete(
 articleRouter.patch(
   "/:id/approve",
   authMiddleware,
-  requirePermission("create_article"),
+  requirePermission("review_article"),
   asyncHandler(articleController.approve.bind(articleController))
 );
 
 articleRouter.patch(
   "/:id/reject",
   authMiddleware,
-  requirePermission("create_article"),
+  requirePermission("review_article"),
   validate(rejectArticleSchema),
   asyncHandler(articleController.reject.bind(articleController))
+);
+
+articleRouter.post(
+  "/:id/like",
+  authMiddleware,
+  requirePermission("like_bookmark"),
+  validate(toggleLikeSchema),
+  asyncHandler(articleController.toggleLike.bind(articleController))
+);
+
+articleRouter.post(
+  "/:id/bookmark",
+  authMiddleware,
+  requirePermission("like_bookmark"),
+  validate(toggleBookmarkSchema),
+  asyncHandler(articleController.toggleBookmark.bind(articleController))
 );
 
 export { articleRouter };

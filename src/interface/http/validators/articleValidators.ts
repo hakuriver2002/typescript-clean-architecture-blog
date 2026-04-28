@@ -11,10 +11,31 @@ function richTextHasMinTextLength(value: string, minLength: number) {
   return textOnly.length >= minLength;
 }
 
+const booleanQueryParam = z.preprocess((value) => {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "string") {
+    if (value === "true") return true;
+    if (value === "false") return false;
+  }
+  return value;
+}, z.boolean());
+
 export const paginationQuerySchema = {
   query: z.object({
     page: z.coerce.number().int().positive().default(1),
     pageSize: z.coerce.number().int().positive().max(50).default(10),
+  }),
+};
+
+export const listPublicArticlesQuerySchema = {
+  query: z.object({
+    page: z.coerce.number().int().positive().default(1),
+    pageSize: z.coerce.number().int().positive().max(50).default(10),
+    search: z.string().trim().min(1).max(200).optional(),
+    category: z.nativeEnum(ArticleCategory).optional(),
+    tag: z.string().trim().min(2).max(100).optional(),
+    featured: booleanQueryParam.optional(),
+    sort: z.enum(["latest", "popular"]).default("latest"),
   }),
 };
 
@@ -26,6 +47,7 @@ export const createArticleSchema = {
       .refine((value) => richTextHasMinTextLength(value, 10), "Content must be at least 10 characters"),
     excerpt: z.string().max(300).optional(),
     thumbnailUrl: z.string().url().optional(),
+    category: z.nativeEnum(ArticleCategory).optional(),
     published: z.boolean().optional(),
     tagIds: z.array(z.string()).optional(),
   }),
@@ -47,7 +69,8 @@ export const updateArticleSchema = {
         .refine((value) => richTextHasMinTextLength(value, 10), "Content must be at least 10 characters")
         .optional(),
       excerpt: z.string().max(300).nullable().optional(),
-      coverImage: z.string().url().nullable().optional(),
+      thumbnailUrl: z.string().url().nullable().optional(),
+      category: z.nativeEnum(ArticleCategory).nullable().optional(),
       published: z.boolean().optional(),
     })
     .refine((body) => Object.keys(body).length > 0, {
@@ -76,4 +99,12 @@ export const rejectArticleSchema = {
   body: z.object({
     rejectionReason: z.string().min(1, "Rejection reason is required"),
   }),
-}
+};
+
+export const toggleLikeSchema = {
+  params: z.object({ id: z.string().uuid() }),
+};
+
+export const toggleBookmarkSchema = {
+  params: z.object({ id: z.string().uuid() }),
+};

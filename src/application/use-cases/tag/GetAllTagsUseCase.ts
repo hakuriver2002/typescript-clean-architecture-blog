@@ -5,7 +5,7 @@ import { TagResponseDTO } from "../../../application/dto/tag/TagDTO";
 export class GetAllTagsUseCase {
     constructor(private tagRepo: TagRepository) { }
 
-    async execute(page: number = 1, pageSize: number = 10): Promise<{
+    async execute(page: number = 1, pageSize: number = 10, search?: string): Promise<{
         data: TagResponseDTO[];
         total: number;
         page: number;
@@ -15,7 +15,7 @@ export class GetAllTagsUseCase {
         if (page < 1) page = 1;
         if (pageSize < 1 || pageSize > 100) pageSize = 10;
 
-        const result = await this.tagRepo.findAll(page, pageSize);
+        const result = await this.tagRepo.findAll(page, pageSize, search?.trim() || undefined);
 
         return {
             data: result.data.map((tag) => this.mapToDTO(tag)),

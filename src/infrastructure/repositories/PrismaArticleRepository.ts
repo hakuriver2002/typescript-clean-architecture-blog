@@ -1,11 +1,26 @@
-import { prisma } from "../db/prisma";
-import { ArticleRepository } from "../../domain/repositories/ArticleRepository";
-import { CreateArticleInput, UpdateArticleInput } from "../../domain/repositories/ArticleRepository";
+import { Prisma } from "@prisma/client";
 import { Article } from "../../domain/entities/Article";
-import { ArticleMapper } from "../mappers/ArticleMapper";
 import { ArticleStatus } from "../../domain/enums/article";
+import {
+  ArticleRepository,
+  CreateArticleInput,
+  FindPublicArticlesInput,
+  UpdateArticleInput,
+} from "../../domain/repositories/ArticleRepository";
+import { prisma } from "../db/prisma";
+import { ArticleMapper } from "../mappers/ArticleMapper";
 
 export class PrismaArticleRepository implements ArticleRepository {
+  private readonly include = {
+    tags: { include: { tag: true } },
+  } satisfies Prisma.ArticleInclude;
+
+  private toListResult(data: Array<Parameters<typeof ArticleMapper.toDomain>[0]>, total: number) {
+    return {
+      data: data.map(ArticleMapper.toDomain),
+      total,
+    };
+  }
 
   async create(input: CreateArticleInput) {
     const article = await prisma.article.create({
@@ -32,9 +47,7 @@ export class PrismaArticleRepository implements ArticleRepository {
 
     const full = await prisma.article.findUnique({
       where: { id: article.id },
-      include: {
-        tags: { include: { tag: true } },
-      },
+      include: this.include,
     });
 
     if (!full) throw new Error("Article not found");
@@ -45,9 +58,7 @@ export class PrismaArticleRepository implements ArticleRepository {
   async findById(id: string) {
     const article = await prisma.article.findUnique({
       where: { id },
-      include: {
-        tags: { include: { tag: true } },
-      },
+      include: this.include,
     });
 
     if (!article) return null;
@@ -58,9 +69,7 @@ export class PrismaArticleRepository implements ArticleRepository {
   async findBySlug(slug: string) {
     const article = await prisma.article.findUnique({
       where: { slug },
-      include: {
-        tags: { include: { tag: true } },
-      },
+      include: this.include,
     });
 
     if (!article) return null;
@@ -68,25 +77,92 @@ export class PrismaArticleRepository implements ArticleRepository {
     return ArticleMapper.toDomain(article);
   }
 
-  async findPublicArticles(page: number, pageSize: number) {
-    const skip = (page - 1) * pageSize;
+  async findPublicArticles(input: FindPublicArticlesInput) {
+    const skip = (input.page - 1) * input.pageSize;
+    const where: Prisma.ArticleWhereInput = {
+      status: "PUBLISHED",
+      ...(input.search
+        ? {
+            OR: [
+              { title: { contains: input.search, mode: "insensitive" } },
+              { content: { contains: input.search, mode: "insensitive" } },
+              { excerpt: { contains: input.search, mode: "insensitive" } },
+            ],
+          }
+        : {}),
+      ...(input.category ? { category: input.category } : {}),
+      ...(input.tag
+        ? {
+            tags: {
+              some: {
+                tag: {
+                  slug: input.tag,
+                },
+              },
+            },
+          }
+        : {}),
+      ...(typeof input.featured === "boolean" ? { isFeatured: input.featured } : {}),
+    };
+
+    const orderBy: Prisma.ArticleOrderByWithRelationInput[] =
+      input.sort === "popular"
+        ? [{ viewCount: "desc" }, { publishedAt: "desc" }, { createdAt: "desc" }]
+        : [{ publishedAt: "desc" }, { createdAt: "desc" }];
 
     const [data, total] = await Promise.all([
       prisma.article.findMany({
-        where: { status: "PUBLISHED" },
+        where,
         skip,
-        take: pageSize,
-        include: {
-          tags: { include: { tag: true } },
-        },
+        take: input.pageSize,
+        orderBy,
+        include: this.include,
       }),
-      prisma.article.count(),
+      prisma.article.count({ where }),
     ]);
 
-    return {
-      data: data.map(ArticleMapper.toDomain),
-      total,
+    return this.toListResult(data, total);
+  }
+
+  async findFeaturedArticles(page: number, pageSize: number) {
+    const skip = (page - 1) * pageSize;
+    const where: Prisma.ArticleWhereInput = {
+      status: "PUBLISHED",
+      isFeatured: true,
     };
+
+    const [data, total] = await Promise.all([
+      prisma.article.findMany({
+        where,
+        skip,
+        take: pageSize,
+        orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
+        include: this.include,
+      }),
+      prisma.article.count({ where }),
+    ]);
+
+    return this.toListResult(data, total);
+  }
+
+  async findTrendingArticles(page: number, pageSize: number) {
+    const skip = (page - 1) * pageSize;
+    const where: Prisma.ArticleWhereInput = {
+      status: "PUBLISHED",
+    };
+
+    const [data, total] = await Promise.all([
+      prisma.article.findMany({
+        where,
+        skip,
+        take: pageSize,
+        orderBy: [{ viewCount: "desc" }, { publishedAt: "desc" }, { createdAt: "desc" }],
+        include: this.include,
+      }),
+      prisma.article.count({ where }),
+    ]);
+
+    return this.toListResult(data, total);
   }
 
   async update(id: string, input: UpdateArticleInput) {
@@ -95,9 +171,7 @@ export class PrismaArticleRepository implements ArticleRepository {
       data: {
         ...input,
       },
-      include: {
-        tags: { include: { tag: true } },
-      },
+      include: this.include,
     });
 
     return ArticleMapper.toDomain(article);
@@ -114,9 +188,7 @@ export class PrismaArticleRepository implements ArticleRepository {
         status,
         publishedAt: status === "PUBLISHED" ? new Date() : null,
       },
-      include: {
-        tags: { include: { tag: true } },
-      },
+      include: this.include,
     });
 
     return ArticleMapper.toDomain(article);
@@ -130,9 +202,7 @@ export class PrismaArticleRepository implements ArticleRepository {
         where: { authorId },
         skip,
         take: pageSize,
-        include: {
-          tags: { include: { tag: true } },
-        },
+        include: this.include,
       }),
       prisma.article.count({ where: { authorId } }),
     ]);
@@ -151,9 +221,7 @@ export class PrismaArticleRepository implements ArticleRepository {
         approvedBy,
         publishedAt: new Date(),
       },
-      include: {
-        tags: { include: { tag: true } },
-      },
+      include: this.include,
     });
 
     return ArticleMapper.toDomain(article);
@@ -166,9 +234,7 @@ export class PrismaArticleRepository implements ArticleRepository {
         status: "REJECTED",
         rejectionReason,
       },
-      include: {
-        tags: { include: { tag: true } },
-      },
+      include: this.include,
     });
 
     return ArticleMapper.toDomain(article);

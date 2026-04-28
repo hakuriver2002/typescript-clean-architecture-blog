@@ -21,13 +21,25 @@ export interface UpdateArticleInput {
   tagIds?: string[];
 }
 
+export interface FindPublicArticlesInput {
+  page: number;
+  pageSize: number;
+  search?: string;
+  category?: string;
+  tag?: string;
+  featured?: boolean;
+  sort?: "latest" | "popular";
+}
+
 export interface ArticleRepository {
   create(input: CreateArticleInput): Promise<Article>;
   approve(articleId: string, approvedBy: string): Promise<Article>;
   reject(articleId: string, rejectionReason: string): Promise<Article>;
   findById(id: string): Promise<Article | null>;
   findBySlug(slug: string): Promise<Article | null>;
-  findPublicArticles(page: number, pageSize: number): Promise<{ data: Article[]; total: number }>;
+  findPublicArticles(input: FindPublicArticlesInput): Promise<{ data: Article[]; total: number }>;
+  findFeaturedArticles(page: number, pageSize: number): Promise<{ data: Article[]; total: number }>;
+  findTrendingArticles(page: number, pageSize: number): Promise<{ data: Article[]; total: number }>;
   update(id: string, input: UpdateArticleInput): Promise<Article>;
   delete(id: string): Promise<void>;
   updateStatus(id: string, status: ArticleStatus): Promise<Article>;

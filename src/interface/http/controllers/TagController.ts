@@ -14,7 +14,11 @@ export class TagController {
     }
 
     async getAll(req: Request, res: Response) {
-        const result = await container.getAllTagsUseCase.execute();
+        const page = Number(req.query.page) || 1;
+        const pageSize = Number(req.query.limit) || 10;
+        const search = typeof req.query.search === "string" ? req.query.search : undefined;
+
+        const result = await container.getAllTagsUseCase.execute(page, pageSize, search);
 
         res.status(200).json(result);
     }

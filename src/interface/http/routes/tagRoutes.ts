@@ -10,31 +10,27 @@ const tagRouter = Router();
 
 tagRouter.get(
     "/",
-    authMiddleware,
-    requirePermission("manage_tags"),
     validate(getAllTagsSchema),
     asyncHandler(tagController.getAll.bind(tagController))
 );
 
 tagRouter.get(
+    "/slug/:slug",
+    validate(getTagBySlugSchema),
+    asyncHandler(tagController.getBySlug.bind(tagController))
+);
+
+tagRouter.use(authMiddleware);
+
+tagRouter.get(
     "/:id",
-    authMiddleware,
     validate(getTagByIdSchema),
     requirePermission("manage_tags"),
     asyncHandler(tagController.getById.bind(tagController))
 );
 
 tagRouter.get(
-    "/slug/:slug",
-    authMiddleware,
-    validate(getTagBySlugSchema),
-    requirePermission("manage_tags"),
-    asyncHandler(tagController.getBySlug.bind(tagController))
-);
-
-tagRouter.get(
     "/name/:name",
-    authMiddleware,
     validate(getTagByNameSchema),
     requirePermission("manage_tags"),
     asyncHandler(tagController.getByName.bind(tagController))
@@ -42,7 +38,6 @@ tagRouter.get(
 
 tagRouter.post(
     "/",
-    authMiddleware,
     validate(createTagSchema),
     requirePermission("manage_tags"),
     asyncHandler(tagController.create.bind(tagController))
@@ -50,7 +45,6 @@ tagRouter.post(
 
 tagRouter.put(
     "/:id",
-    authMiddleware,
     validate(updateTagSchema),
     requirePermission("manage_tags"),
     asyncHandler(tagController.update.bind(tagController))
@@ -58,7 +52,6 @@ tagRouter.put(
 
 tagRouter.delete(
     "/:id",
-    authMiddleware,
     validate(deleteTagSchema),
     requirePermission("manage_tags"),
     asyncHandler(tagController.delete.bind(tagController))

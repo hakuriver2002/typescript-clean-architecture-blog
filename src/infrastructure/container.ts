@@ -43,6 +43,10 @@ import { GetArticleBySlugUseCase } from "../application/use-cases/article/GetArt
 import { ListMyArticlesUseCase } from "../application/use-cases/article/ListMyArticlesUseCase";
 import { ApproveArticleUseCase } from "../application/use-cases/article/ApproveArticleUseCase";
 import { RejectArticleUseCase } from "../application/use-cases/article/RejectArticleUseCase";
+import { ToggleLikeArticleUseCase } from "../application/use-cases/article/ToggleLikeArticleUseCase";
+import { ToggleBookmarkArticleUseCase } from "../application/use-cases/article/ToggleBookmarkArticleUseCase";
+import { ListFeaturedArticlesUseCase } from "../application/use-cases/article/ListFeaturedArticlesUseCase";
+import { ListTrendingArticlesUseCase } from "../application/use-cases/article/ListTrendingArticlesUseCase";
 import { PrismaCommentRepository } from "./repositories/PrismaCommentRepository";
 import { CreateCommentUseCase } from "../application/use-cases/comment/CreateCommentUseCase";
 import { DeleteCommentUseCase } from "../application/use-cases/comment/DeleteCommentUseCase";
@@ -52,10 +56,13 @@ import { UploadImageUseCase } from "../application/use-cases/upload/UploadImageU
 import { SupabaseStorageRepository } from "./storage/SupabaseStorageRepository";
 import { SharpImageProcessor } from "./images/SharpImageProcessor";
 import { PrismaBookmarkRepository } from "./repositories/PrismaBookmarkRepository";
+import { PrismaLikeRepository } from "./repositories/PrismaLikeRepository";
 import { GetMyProfileUseCase } from "../application/use-cases/profile/GetMyProfileUseCase";
 import { UpdateMyProfileUseCase } from "../application/use-cases/profile/UpdateMyProfileUseCase";
 import { ChangeMyPasswordUseCase } from "../application/use-cases/profile/ChangeMyPasswordUseCase";
 import { ListMyBookmarkedArticlesUseCase } from "../application/use-cases/profile/ListMyBookmarkedArticlesUseCase";
+import { PrismaDashboardRepository } from "./repositories/PrismaDashboardRepository";
+import { GetDashboardOverviewUseCase } from "../application/use-cases/dashboard/GetDashboardOverviewUseCase";
 
 const userRepository = new PrismaUserRepository();
 const articleRepository = new PrismaArticleRepository();
@@ -63,8 +70,10 @@ const articleRepository = new PrismaArticleRepository();
 const tagRepository = new PrismaTagRepository();
 const commentRepository = new PrismaCommentRepository();
 const bookmarkRepository = new PrismaBookmarkRepository();
+const likeRepository = new PrismaLikeRepository();
 const storageRepository = new SupabaseStorageRepository();
 const imageProcessor = new SharpImageProcessor();
+const dashboardRepository = new PrismaDashboardRepository();
 const createCommentUseCase = new CreateCommentUseCase(commentRepository, articleRepository);
 const refreshTokenRepository = new PrismaRefreshTokenRepository();
 const passwordResetTokenRepository = new PrismaPasswordResetTokenRepository();
@@ -116,6 +125,10 @@ export const container = {
   getArticleBySlugUseCase: new GetArticleBySlugUseCase(articleRepository),
   approveArticleUseCase: new ApproveArticleUseCase(articleRepository),
   rejectArticleUseCase: new RejectArticleUseCase(articleRepository),
+  toggleLikeArticleUseCase: new ToggleLikeArticleUseCase(articleRepository, likeRepository),
+  toggleBookmarkArticleUseCase: new ToggleBookmarkArticleUseCase(articleRepository, bookmarkRepository),
+  listFeaturedArticlesUseCase: new ListFeaturedArticlesUseCase(articleRepository),
+  listTrendingArticlesUseCase: new ListTrendingArticlesUseCase(articleRepository),
   // updateArticleStatusUseCase: new UpdateArticleStatusUseCase(articleRepository),
   // listArticlesByAuthorUseCase: new ListArticlesByAuthorUseCase(articleRepository),
 
@@ -146,4 +159,7 @@ export const container = {
   updateMyProfileUseCase: new UpdateMyProfileUseCase(userRepository),
   changeMyPasswordUseCase: new ChangeMyPasswordUseCase(userRepository, hashService),
   listMyBookmarkedArticlesUseCase: new ListMyBookmarkedArticlesUseCase(bookmarkRepository),
+
+  // ===Dashboard Usecase===
+  getDashboardOverviewUseCase: new GetDashboardOverviewUseCase(dashboardRepository),
 };

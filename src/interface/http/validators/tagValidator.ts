@@ -29,14 +29,14 @@ export const getTagByNameSchema = {
 export const createTagSchema = {
     body: z.object({
         name: z.string().min(2).max(50),
-        slug: z.string().min(2).max(50),
     }),
 };
 
 export const updateTagSchema = {
     body: z.object({
-        name: z.string().min(2).max(50),
-        slug: z.string().min(2).max(50),
+        name: z.string().min(2).max(50).optional(),
+    }).refine((body) => Object.keys(body).length > 0, {
+        message: "At least one field is required",
     }),
 };
 

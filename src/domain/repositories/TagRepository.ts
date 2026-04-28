@@ -15,7 +15,7 @@ export interface TagRepository {
     findById(id: string): Promise<Tag | null>;
     findBySlug(slug: string): Promise<Tag | null>;
     findByIds(ids: string[]): Promise<Tag[]>;
-    findAll(page: number, pageSize: number): Promise<{ data: Tag[]; total: number }>;
+    findAll(page: number, pageSize: number, search?: string): Promise<{ data: Tag[]; total: number }>;
     update(id: string, input: UpdateTagInput): Promise<Tag>;
     delete(id: string): Promise<void>;
     findByName(name: string): Promise<Tag | null>;

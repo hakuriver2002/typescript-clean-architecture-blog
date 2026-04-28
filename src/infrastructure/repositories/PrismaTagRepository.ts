@@ -56,16 +56,35 @@ export class PrismaTagRepository implements TagRepository {
         return tags.map((tag) => this.toDomain(tag));
     }
 
-    async findAll(page: number, pageSize: number) {
+    async findAll(page: number, pageSize: number, search?: string) {
         const skip = (page - 1) * pageSize;
+        const where = search
+            ? {
+                OR: [
+                    {
+                        name: {
+                            contains: search,
+                            mode: "insensitive" as const,
+                        },
+                    },
+                    {
+                        slug: {
+                            contains: search,
+                            mode: "insensitive" as const,
+                        },
+                    },
+                ],
+            }
+            : undefined;
 
         const [data, total] = await Promise.all([
             prisma.tag.findMany({
+                where,
                 skip,
                 take: pageSize,
                 orderBy: { createdAt: "desc" },
             }),
-            prisma.tag.count(),
+            prisma.tag.count({ where }),
         ]);
 
         return {

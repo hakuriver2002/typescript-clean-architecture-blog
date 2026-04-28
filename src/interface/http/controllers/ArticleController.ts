@@ -38,7 +38,39 @@ export class ArticleController {
   async listPublic(req: Request, res: Response) {
     const page = Number(req.query.page);
     const pageSize = Number(req.query.pageSize);
-    const result = await container.listPublicArticlesUseCase.execute(page, pageSize);
+    const result = await container.listPublicArticlesUseCase.execute({
+      page,
+      pageSize,
+      search: typeof req.query.search === "string" ? req.query.search : undefined,
+      category: typeof req.query.category === "string" ? req.query.category : undefined,
+      tag: typeof req.query.tag === "string" ? req.query.tag : undefined,
+      featured: typeof req.query.featured === "boolean" ? req.query.featured : undefined,
+      sort: req.query.sort as "latest" | "popular" | undefined,
+    });
+    return res.status(200).json({
+      ...result,
+      page,
+      pageSize,
+      totalPages: Math.ceil(result.total / pageSize),
+    });
+  }
+
+  async listFeatured(req: Request, res: Response) {
+    const page = Number(req.query.page);
+    const pageSize = Number(req.query.pageSize);
+    const result = await container.listFeaturedArticlesUseCase.execute(page, pageSize);
+    return res.status(200).json({
+      ...result,
+      page,
+      pageSize,
+      totalPages: Math.ceil(result.total / pageSize),
+    });
+  }
+
+  async listTrending(req: Request, res: Response) {
+    const page = Number(req.query.page);
+    const pageSize = Number(req.query.pageSize);
+    const result = await container.listTrendingArticlesUseCase.execute(page, pageSize);
     return res.status(200).json({
       ...result,
       page,
@@ -103,6 +135,22 @@ export class ArticleController {
       actorRole: req.user!.role,
     });
 
+    return res.status(200).json(result);
+  }
+
+  async toggleLike(req: Request, res: Response) {
+    const result = await container.toggleLikeArticleUseCase.execute({
+      articleId: String(req.params.id),
+      userId: req.user!.id,
+    });
+    return res.status(200).json(result);
+  }
+
+  async toggleBookmark(req: Request, res: Response) {
+    const result = await container.toggleBookmarkArticleUseCase.execute({
+      articleId: String(req.params.id),
+      userId: req.user!.id,
+    });
     return res.status(200).json(result);
   }
 

@@ -5,6 +5,25 @@ import { ArticleMapper } from "../mappers/ArticleMapper";
 import { Article } from "../../domain/entities/Article";
 
 export class PrismaBookmarkRepository implements BookmarkRepository {
+  async find(userId: string, articleId: string): Promise<Bookmark | null> {
+    const found = await prisma.articleBookmark.findUnique({
+      where: {
+        articleId_userId: {
+          articleId,
+          userId,
+        },
+      },
+    });
+
+    if (!found) return null;
+
+    return {
+      userId: found.userId,
+      articleId: found.articleId,
+      createdAt: found.createdAt,
+    };
+  }
+
   async create(data: Bookmark): Promise<void> {
     await prisma.articleBookmark.create({
       data: {
