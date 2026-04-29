@@ -1,4 +1,5 @@
 import { ArticleRepository } from "../../../domain/repositories/ArticleRepository";
+import { ArticleDTOMapper } from "../../mappers/ArticleDTOMapper";
 
 export class ListPublicArticlesUseCase {
     constructor(private repo: ArticleRepository) { }
@@ -12,7 +13,7 @@ export class ListPublicArticlesUseCase {
         featured?: boolean;
         sort?: "latest" | "popular";
     }) {
-        return this.repo.findPublicArticles({
+        const result = await this.repo.findPublicArticles({
             page: input.page ?? 1,
             pageSize: input.pageSize ?? 10,
             search: input.search,
@@ -20,6 +21,13 @@ export class ListPublicArticlesUseCase {
             tag: input.tag,
             featured: input.featured,
             sort: input.sort,
+        });
+
+        return ArticleDTOMapper.toPaginatedDTO({
+            data: ArticleDTOMapper.toListDTO(result.data),
+            total: result.total,
+            page: input.page ?? 1,
+            pageSize: input.pageSize ?? 10,
         });
     }
 }

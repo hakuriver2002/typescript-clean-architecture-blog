@@ -94,6 +94,30 @@ export const getByIdSchema = {
   params: z.object({ id: z.string().uuid() }),
 };
 
+export const articlesByTagSchema = {
+  params: z.object({
+    slug: z.string().min(2).max(100),
+  }),
+  query: paginationQuerySchema.query,
+};
+
+export const articlesByCategorySchema = {
+  params: z.object({
+    category: z.nativeEnum(ArticleCategory),
+  }),
+  query: paginationQuerySchema.query,
+};
+
+export const relatedArticlesByIdSchema = {
+  params: z.object({ id: z.string().uuid() }),
+  query: paginationQuerySchema.query,
+};
+
+export const relatedArticlesBySlugSchema = {
+  params: z.object({ slug: z.string().min(3).max(200) }),
+  query: paginationQuerySchema.query,
+};
+
 export const rejectArticleSchema = {
   params: z.object({ id: z.string().uuid() }),
   body: z.object({
@@ -107,4 +131,15 @@ export const toggleLikeSchema = {
 
 export const toggleBookmarkSchema = {
   params: z.object({ id: z.string().uuid() }),
+};
+
+export const increaseViewSchema = {
+  params: z.object({ id: z.string().uuid() }),
+};
+
+export const setFeaturedArticleSchema = {
+  params: z.object({ id: z.string().uuid() }),
+  body: z.object({
+    isFeatured: z.boolean(),
+  }),
 };

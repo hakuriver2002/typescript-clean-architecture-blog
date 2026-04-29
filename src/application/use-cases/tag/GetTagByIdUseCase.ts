@@ -1,6 +1,7 @@
-import { TagRepository, CreateTagInput } from "../../../domain/repositories/TagRepository";
-import { CreateTagDTO } from "../../../application/dto/tag/TagDTO";
+import { TagRepository } from "../../../domain/repositories/TagRepository";
 import { TagResponseDTO } from "../../../application/dto/tag/TagDTO";
+import { TagDTOMapper } from "../../mappers/TagDTOMapper";
+import { AppError } from "../../../shared/AppError";
 
 
 export class GetTagByIdUseCase {
@@ -10,19 +11,9 @@ export class GetTagByIdUseCase {
         const tag = await this.tagRepo.findById(id);
 
         if (!tag) {
-            throw new Error("Tag not found");
+            throw new AppError("Tag not found", 404);
         }
 
-        return this.mapToDTO(tag);
-    }
-
-    private mapToDTO(tag: any): TagResponseDTO {
-        return {
-            id: tag.id,
-            name: tag.name,
-            slug: tag.slug,
-            createdAt: tag.createdAt,
-            updatedAt: tag.updatedAt,
-        };
+        return TagDTOMapper.toDTO(tag);
     }
 }

@@ -2,9 +2,13 @@ import { Request, Response } from "express";
 import { container } from "../../../infrastructure/container";
 
 export class ProfileController {
+  private json(res: Response, statusCode: number, payload: unknown) {
+    return res.status(statusCode).json(payload);
+  }
+
   async getMe(req: Request, res: Response) {
     const result = await container.getMyProfileUseCase.execute(req.user!.id);
-    return res.status(200).json(result);
+    return this.json(res, 200, result);
   }
 
   async updateMe(req: Request, res: Response) {
@@ -13,7 +17,7 @@ export class ProfileController {
       fullName: req.body.fullName,
       avatarUrl: req.body.avatarUrl,
     });
-    return res.status(200).json(result);
+    return this.json(res, 200, result);
   }
 
   async changePassword(req: Request, res: Response) {
@@ -22,7 +26,7 @@ export class ProfileController {
       currentPassword: req.body.currentPassword,
       newPassword: req.body.newPassword,
     });
-    return res.status(200).json(result);
+    return this.json(res, 200, result);
   }
 
   async myArticles(req: Request, res: Response) {
@@ -33,7 +37,7 @@ export class ProfileController {
       page,
       pageSize,
     });
-    return res.status(200).json(result);
+    return this.json(res, 200, result);
   }
 
   async myBookmarks(req: Request, res: Response) {
@@ -44,7 +48,7 @@ export class ProfileController {
       page,
       pageSize,
     });
-    return res.status(200).json(result);
+    return this.json(res, 200, result);
   }
 }
 

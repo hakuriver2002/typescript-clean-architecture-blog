@@ -32,6 +32,7 @@ export interface ArticleResponseDTO {
     id: string;
     title: string;
     slug: string;
+    url: string;
     content: string;
     excerpt: string | null;
     thumbnailUrl: string | null;

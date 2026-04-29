@@ -19,6 +19,7 @@ export interface UpdateArticleInput {
   thumbnailUrl?: string;
   category?: string;
   tagIds?: string[];
+  isFeatured?: boolean;
 }
 
 export interface FindPublicArticlesInput {
@@ -40,6 +41,8 @@ export interface ArticleRepository {
   findPublicArticles(input: FindPublicArticlesInput): Promise<{ data: Article[]; total: number }>;
   findFeaturedArticles(page: number, pageSize: number): Promise<{ data: Article[]; total: number }>;
   findTrendingArticles(page: number, pageSize: number): Promise<{ data: Article[]; total: number }>;
+  findRelatedArticles(articleId: string, page: number, pageSize: number): Promise<{ data: Article[]; total: number }>;
+  incrementViewCount(id: string): Promise<Article>;
   update(id: string, input: UpdateArticleInput): Promise<Article>;
   delete(id: string): Promise<void>;
   updateStatus(id: string, status: ArticleStatus): Promise<Article>;

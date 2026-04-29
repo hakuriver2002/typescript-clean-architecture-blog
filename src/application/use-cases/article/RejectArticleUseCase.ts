@@ -1,5 +1,6 @@
 import { ArticleRepository } from "../../../domain/repositories/ArticleRepository";
 import { ArticleStatus } from "../../../domain/enums/article";
+import { ArticleDTOMapper } from "../../mappers/ArticleDTOMapper";
 import { AppError } from "../../../shared/AppError";
 
 interface Input {
@@ -61,7 +62,7 @@ export class RejectArticleUseCase {
 
         return {
             message: "Article rejected successfully",
-            article: rejectedArticle,
+            article: ArticleDTOMapper.toDTO(rejectedArticle),
         };
     }
 }

@@ -47,6 +47,10 @@ import { ToggleLikeArticleUseCase } from "../application/use-cases/article/Toggl
 import { ToggleBookmarkArticleUseCase } from "../application/use-cases/article/ToggleBookmarkArticleUseCase";
 import { ListFeaturedArticlesUseCase } from "../application/use-cases/article/ListFeaturedArticlesUseCase";
 import { ListTrendingArticlesUseCase } from "../application/use-cases/article/ListTrendingArticlesUseCase";
+import { IncreaseViewUseCase } from "../application/use-cases/article/IncreaseViewUseCase";
+import { SetFeaturedArticleUseCase } from "../application/use-cases/article/SetFeaturedArticleUseCase";
+import { ListRelatedArticlesByIdUseCase } from "../application/use-cases/article/ListRelatedArticlesByIdUseCase";
+import { ListRelatedArticlesBySlugUseCase } from "../application/use-cases/article/ListRelatedArticlesBySlugUseCase";
 import { PrismaCommentRepository } from "./repositories/PrismaCommentRepository";
 import { CreateCommentUseCase } from "../application/use-cases/comment/CreateCommentUseCase";
 import { DeleteCommentUseCase } from "../application/use-cases/comment/DeleteCommentUseCase";
@@ -129,6 +133,10 @@ export const container = {
   toggleBookmarkArticleUseCase: new ToggleBookmarkArticleUseCase(articleRepository, bookmarkRepository),
   listFeaturedArticlesUseCase: new ListFeaturedArticlesUseCase(articleRepository),
   listTrendingArticlesUseCase: new ListTrendingArticlesUseCase(articleRepository),
+  listRelatedArticlesByIdUseCase: new ListRelatedArticlesByIdUseCase(articleRepository),
+  listRelatedArticlesBySlugUseCase: new ListRelatedArticlesBySlugUseCase(articleRepository),
+  increaseViewUseCase: new IncreaseViewUseCase(articleRepository),
+  setFeaturedArticleUseCase: new SetFeaturedArticleUseCase(articleRepository),
   // updateArticleStatusUseCase: new UpdateArticleStatusUseCase(articleRepository),
   // listArticlesByAuthorUseCase: new ListArticlesByAuthorUseCase(articleRepository),
 

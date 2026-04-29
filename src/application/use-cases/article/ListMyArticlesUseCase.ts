@@ -1,4 +1,5 @@
 import { ArticleRepository } from "../../../domain/repositories/ArticleRepository";
+import { ArticleDTOMapper } from "../../mappers/ArticleDTOMapper";
 import { AppError } from "../../../shared/AppError";
 
 interface Input {
@@ -29,14 +30,11 @@ export class ListMyArticlesUseCase {
             input.pageSize
         );
 
-        const totalPages = Math.ceil(result.total / input.pageSize);
-
-        return {
-            data: result.data,
+        return ArticleDTOMapper.toPaginatedDTO({
+            data: ArticleDTOMapper.toListDTO(result.data),
             total: result.total,
             page: input.page,
             pageSize: input.pageSize,
-            totalPages,
-        };
+        });
     }
 }

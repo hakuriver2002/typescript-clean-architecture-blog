@@ -1,6 +1,8 @@
-import { TagRepository, CreateTagInput } from "../../../domain/repositories/TagRepository";
+import { TagRepository } from "../../../domain/repositories/TagRepository";
 import { CreateTagDTO } from "../../../application/dto/tag/TagDTO";
 import { TagResponseDTO } from "../../../application/dto/tag/TagDTO";
+import { TagDTOMapper } from "../../mappers/TagDTOMapper";
+import { AppError } from "../../../shared/AppError";
 
 export class CreateTagUseCase {
     constructor(private tagRepo: TagRepository) { }
@@ -8,7 +10,7 @@ export class CreateTagUseCase {
     async execute(input: CreateTagDTO): Promise<TagResponseDTO> {
         const existingTag = await this.tagRepo.findByName(input.name);
         if (existingTag) {
-            throw new Error("Tag with this name already exists");
+            throw new AppError("Tag with this name already exists", 409);
         }
 
         const slug = this.generateSlug(input.name);
@@ -18,7 +20,7 @@ export class CreateTagUseCase {
             slug,
         });
 
-        return this.mapToDTO(tag);
+        return TagDTOMapper.toDTO(tag);
     }
 
     private generateSlug(name: string): string {
@@ -27,15 +29,5 @@ export class CreateTagUseCase {
             .trim()
             .replace(/[^\w\s-]/g, "")
             .replace(/\s+/g, "-");
-    }
-
-    private mapToDTO(tag: any): TagResponseDTO {
-        return {
-            id: tag.id,
-            name: tag.name,
-            slug: tag.slug,
-            createdAt: tag.createdAt,
-            updatedAt: tag.updatedAt,
-        };
     }
 }

@@ -1,6 +1,6 @@
-import { TagRepository, CreateTagInput } from "../../../domain/repositories/TagRepository";
-import { CreateTagDTO } from "../../../application/dto/tag/TagDTO";
+import { TagRepository } from "../../../domain/repositories/TagRepository";
 import { TagResponseDTO } from "../../../application/dto/tag/TagDTO";
+import { TagDTOMapper } from "../../mappers/TagDTOMapper";
 
 export class GetAllTagsUseCase {
     constructor(private tagRepo: TagRepository) { }
@@ -17,22 +17,11 @@ export class GetAllTagsUseCase {
 
         const result = await this.tagRepo.findAll(page, pageSize, search?.trim() || undefined);
 
-        return {
-            data: result.data.map((tag) => this.mapToDTO(tag)),
+        return TagDTOMapper.toPaginatedDTO({
+            data: result.data,
             total: result.total,
             page,
             pageSize,
-            totalPages: Math.ceil(result.total / pageSize),
-        };
-    }
-
-    private mapToDTO(tag: any): TagResponseDTO {
-        return {
-            id: tag.id,
-            name: tag.name,
-            slug: tag.slug,
-            createdAt: tag.createdAt,
-            updatedAt: tag.updatedAt,
-        };
+        });
     }
 }

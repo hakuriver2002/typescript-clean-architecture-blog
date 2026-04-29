@@ -7,8 +7,12 @@ import { asyncHandler } from "../middlewares/asyncHandler";
 import {
   createArticleSchema,
   deletePostSchema,
+  articlesByCategorySchema,
+  articlesByTagSchema,
   getByIdSchema,
   getBySlugSchema,
+  relatedArticlesByIdSchema,
+  relatedArticlesBySlugSchema,
   listPublicArticlesQuerySchema,
   paginationQuerySchema,
   updateArticleSchema,
@@ -16,6 +20,8 @@ import {
   rejectArticleSchema,
   toggleLikeSchema,
   toggleBookmarkSchema,
+  increaseViewSchema,
+  setFeaturedArticleSchema,
 } from "../validators/articleValidators";
 import { commentRouter } from "./commentRoutes";
 
@@ -42,6 +48,24 @@ articleRouter.get(
 );
 
 articleRouter.get(
+  "/tag/:slug",
+  validate(articlesByTagSchema),
+  asyncHandler(articleController.listByTag.bind(articleController))
+);
+
+articleRouter.get(
+  "/category/:category",
+  validate(articlesByCategorySchema),
+  asyncHandler(articleController.listByCategory.bind(articleController))
+);
+
+articleRouter.get(
+  "/slug/:slug/related",
+  validate(relatedArticlesBySlugSchema),
+  asyncHandler(articleController.listRelatedBySlug.bind(articleController))
+);
+
+articleRouter.get(
   "/me",
   authMiddleware,
   requirePermission("create_article"),
@@ -53,6 +77,12 @@ articleRouter.get(
   "/:id",
   validate(getByIdSchema),
   asyncHandler(articleController.getById.bind(articleController))
+);
+
+articleRouter.get(
+  "/:id/related",
+  validate(relatedArticlesByIdSchema),
+  asyncHandler(articleController.listRelatedById.bind(articleController))
 );
 
 articleRouter.get(
@@ -129,6 +159,20 @@ articleRouter.post(
   requirePermission("like_bookmark"),
   validate(toggleBookmarkSchema),
   asyncHandler(articleController.toggleBookmark.bind(articleController))
+);
+
+articleRouter.post(
+  "/:id/view",
+  validate(increaseViewSchema),
+  asyncHandler(articleController.increaseView.bind(articleController))
+);
+
+articleRouter.patch(
+  "/:id/featured",
+  authMiddleware,
+  requirePermission("review_article"),
+  validate(setFeaturedArticleSchema),
+  asyncHandler(articleController.setFeatured.bind(articleController))
 );
 
 export { articleRouter };

@@ -1,3 +1,4 @@
+import { AppError } from "../../../shared/AppError";
 import { ArticleRepository } from "../../../domain/repositories/ArticleRepository";
 
 export class IncreaseViewUseCase {
@@ -5,10 +6,8 @@ export class IncreaseViewUseCase {
 
     async execute(id: string) {
         const article = await this.repo.findById(id);
-        if (!article) return;
+        if (!article) throw new AppError("Article not found", 404);
 
-        await this.repo.update(id, {
-            viewCount: article.viewCount + 1,
-        } as any);
+        return this.repo.incrementViewCount(id);
     }
 }

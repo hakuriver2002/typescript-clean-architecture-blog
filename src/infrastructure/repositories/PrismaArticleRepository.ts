@@ -165,6 +165,93 @@ export class PrismaArticleRepository implements ArticleRepository {
     return this.toListResult(data, total);
   }
 
+  async findRelatedArticles(articleId: string, page: number, pageSize: number) {
+    const sourceArticle = await prisma.article.findUnique({
+      where: { id: articleId },
+      include: this.include,
+    });
+
+    if (!sourceArticle) {
+      return { data: [], total: 0 };
+    }
+
+    const tagIds = sourceArticle.tags.map((tag) => tag.tag.id);
+
+    const tagMatchedIds = tagIds.length
+      ? await prisma.article.findMany({
+          where: {
+            status: "PUBLISHED",
+            id: { not: articleId },
+            tags: {
+              some: {
+                tagId: {
+                  in: tagIds,
+                },
+              },
+            },
+          },
+          select: { id: true },
+          orderBy: [{ isFeatured: "desc" }, { publishedAt: "desc" }, { createdAt: "desc" }],
+        })
+      : [];
+
+    const tagMatchedIdValues = tagMatchedIds.map((article) => article.id);
+
+    const categoryMatchedIds = sourceArticle.category
+      ? await prisma.article.findMany({
+          where: {
+            status: "PUBLISHED",
+            id: {
+              not: articleId,
+              notIn: tagMatchedIdValues,
+            },
+            category: sourceArticle.category,
+          },
+          select: { id: true },
+          orderBy: [{ isFeatured: "desc" }, { publishedAt: "desc" }, { createdAt: "desc" }],
+        })
+      : [];
+
+    const orderedIds = [...tagMatchedIds, ...categoryMatchedIds].map((article) => article.id);
+    const total = orderedIds.length;
+    const skip = (page - 1) * pageSize;
+    const pagedIds = orderedIds.slice(skip, skip + pageSize);
+
+    if (!pagedIds.length) {
+      return { data: [], total };
+    }
+
+    const relatedArticles = await prisma.article.findMany({
+      where: {
+        id: {
+          in: pagedIds,
+        },
+      },
+      include: this.include,
+    });
+
+    const articleMap = new Map(relatedArticles.map((article) => [article.id, article]));
+    const orderedArticles = pagedIds
+      .map((id) => articleMap.get(id))
+      .filter((article): article is NonNullable<typeof article> => Boolean(article));
+
+    return this.toListResult(orderedArticles, total);
+  }
+
+  async incrementViewCount(id: string) {
+    const article = await prisma.article.update({
+      where: { id },
+      data: {
+        viewCount: {
+          increment: 1,
+        },
+      },
+      include: this.include,
+    });
+
+    return ArticleMapper.toDomain(article);
+  }
+
   async update(id: string, input: UpdateArticleInput) {
     const article = await prisma.article.update({
       where: { id },
