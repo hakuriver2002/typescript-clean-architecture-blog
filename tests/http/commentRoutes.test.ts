@@ -1,5 +1,6 @@
 import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { createAuthMiddlewareMock, withTestAuth } from "../helpers/httpAuthMocks";
 import { createHttpTestApp } from "../helpers/httpTestApp";
 
 const mockContainer = {
@@ -13,26 +14,7 @@ vi.mock("../../src/infrastructure/container", () => ({
   container: mockContainer,
 }));
 
-vi.mock("../../src/interface/http/middlewares/authMiddleware", () => {
-  return {
-    authMiddleware: (req: any, res: any, next: any) => {
-      const userId = req.header("x-test-user-id");
-      const role = req.header("x-test-role");
-
-      if (!userId || !role) {
-        return res.status(401).json({ message: "Unauthorized" });
-      }
-
-      req.user = {
-        id: userId,
-        email: "tester@example.com",
-        role,
-      };
-
-      next();
-    },
-  };
-});
+vi.mock("../../src/interface/http/middlewares/authMiddleware", () => createAuthMiddlewareMock());
 
 async function createTestApp() {
   return createHttpTestApp(
@@ -75,11 +57,11 @@ describe("commentRouter HTTP", () => {
     });
 
     const app = await createTestApp();
-    const response = await request(app)
-      .post("/api/v1/articles/550e8400-e29b-41d4-a716-446655440000/comments")
-      .set("x-test-user-id", "user-1")
-      .set("x-test-role", "MEMBER")
-      .send({ content: "Nice article" });
+    const response = await withTestAuth(
+      request(app)
+        .post("/api/v1/articles/550e8400-e29b-41d4-a716-446655440000/comments")
+        .send({ content: "Nice article" }),
+    );
 
     expect(response.status).toBe(201);
     expect(mockContainer.createCommentUseCase.execute).toHaveBeenCalledWith({
@@ -97,11 +79,11 @@ describe("commentRouter HTTP", () => {
     });
 
     const app = await createTestApp();
-    const response = await request(app)
-      .post("/api/v1/articles/550e8400-e29b-41d4-a716-446655440000/comments/550e8400-e29b-41d4-a716-446655440111/reply")
-      .set("x-test-user-id", "user-1")
-      .set("x-test-role", "MEMBER")
-      .send({ content: "Reply text" });
+    const response = await withTestAuth(
+      request(app)
+        .post("/api/v1/articles/550e8400-e29b-41d4-a716-446655440000/comments/550e8400-e29b-41d4-a716-446655440111/reply")
+        .send({ content: "Reply text" }),
+    );
 
     expect(response.status).toBe(201);
     expect(mockContainer.replyCommentUseCase.execute).toHaveBeenCalledWith({
@@ -115,10 +97,9 @@ describe("commentRouter HTTP", () => {
     mockContainer.deleteCommentUseCase.execute.mockResolvedValue(undefined);
 
     const app = await createTestApp();
-    const response = await request(app)
-      .delete("/api/v1/articles/550e8400-e29b-41d4-a716-446655440000/comments/550e8400-e29b-41d4-a716-446655440111")
-      .set("x-test-user-id", "user-1")
-      .set("x-test-role", "MEMBER");
+    const response = await withTestAuth(
+      request(app).delete("/api/v1/articles/550e8400-e29b-41d4-a716-446655440000/comments/550e8400-e29b-41d4-a716-446655440111"),
+    );
 
     expect(response.status).toBe(200);
     expect(mockContainer.deleteCommentUseCase.execute).toHaveBeenCalledWith({

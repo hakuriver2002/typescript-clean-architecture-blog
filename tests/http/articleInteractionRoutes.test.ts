@@ -1,5 +1,6 @@
 import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { createAuthMiddlewareMock, withTestAuth } from "../helpers/httpAuthMocks";
 import { createHttpTestApp } from "../helpers/httpTestApp";
 
 const mockContainer = {
@@ -16,26 +17,7 @@ vi.mock("../../src/infrastructure/container", () => ({
   container: mockContainer,
 }));
 
-vi.mock("../../src/interface/http/middlewares/authMiddleware", () => {
-  return {
-    authMiddleware: (req: any, _res: any, next: any) => {
-      const userId = req.header("x-test-user-id");
-      const role = req.header("x-test-role");
-
-      if (!userId || !role) {
-        return _res.status(401).json({ message: "Unauthorized" });
-      }
-
-      req.user = {
-        id: userId,
-        email: "tester@example.com",
-        role,
-      };
-
-      next();
-    },
-  };
-});
+vi.mock("../../src/interface/http/middlewares/authMiddleware", () => createAuthMiddlewareMock());
 
 async function createTestApp() {
   return createHttpTestApp(
@@ -56,10 +38,10 @@ describe("articleRouter auth interactions HTTP", () => {
     });
 
     const app = await createTestApp();
-    const response = await request(app)
-      .post("/api/v1/articles/550e8400-e29b-41d4-a716-446655440000/like")
-      .set("x-test-user-id", "member-1")
-      .set("x-test-role", "MEMBER");
+    const response = await withTestAuth(
+      request(app).post("/api/v1/articles/550e8400-e29b-41d4-a716-446655440000/like"),
+      { userId: "member-1", role: "MEMBER" },
+    );
 
     expect(response.status).toBe(200);
     expect(mockContainer.toggleLikeArticleUseCase.execute).toHaveBeenCalledWith({
@@ -80,10 +62,10 @@ describe("articleRouter auth interactions HTTP", () => {
     });
 
     const app = await createTestApp();
-    const response = await request(app)
-      .post("/api/v1/articles/550e8400-e29b-41d4-a716-446655440000/bookmark")
-      .set("x-test-user-id", "member-1")
-      .set("x-test-role", "MEMBER");
+    const response = await withTestAuth(
+      request(app).post("/api/v1/articles/550e8400-e29b-41d4-a716-446655440000/bookmark"),
+      { userId: "member-1", role: "MEMBER" },
+    );
 
     expect(response.status).toBe(200);
     expect(mockContainer.toggleBookmarkArticleUseCase.execute).toHaveBeenCalledWith({
@@ -101,11 +83,12 @@ describe("articleRouter auth interactions HTTP", () => {
     });
 
     const app = await createTestApp();
-    const response = await request(app)
-      .patch("/api/v1/articles/550e8400-e29b-41d4-a716-446655440000/featured")
-      .set("x-test-user-id", "admin-1")
-      .set("x-test-role", "ADMIN")
-      .send({ isFeatured: true });
+    const response = await withTestAuth(
+      request(app)
+        .patch("/api/v1/articles/550e8400-e29b-41d4-a716-446655440000/featured")
+        .send({ isFeatured: true }),
+      { userId: "admin-1", role: "ADMIN" },
+    );
 
     expect(response.status).toBe(200);
     expect(mockContainer.setFeaturedArticleUseCase.execute).toHaveBeenCalledWith({
@@ -121,11 +104,12 @@ describe("articleRouter auth interactions HTTP", () => {
 
   it("PATCH /api/v1/articles/:id/featured rejects authenticated member without permission", async () => {
     const app = await createTestApp();
-    const response = await request(app)
-      .patch("/api/v1/articles/550e8400-e29b-41d4-a716-446655440000/featured")
-      .set("x-test-user-id", "member-1")
-      .set("x-test-role", "MEMBER")
-      .send({ isFeatured: true });
+    const response = await withTestAuth(
+      request(app)
+        .patch("/api/v1/articles/550e8400-e29b-41d4-a716-446655440000/featured")
+        .send({ isFeatured: true }),
+      { userId: "member-1", role: "MEMBER" },
+    );
 
     expect(response.status).toBe(403);
     expect(response.body.message).toBe("Forbidden");
@@ -161,10 +145,10 @@ describe("articleRouter auth interactions HTTP", () => {
     });
 
     const app = await createTestApp();
-    const response = await request(app)
-      .patch("/api/v1/articles/550e8400-e29b-41d4-a716-446655440000/submit")
-      .set("x-test-user-id", "trainer-1")
-      .set("x-test-role", "TRAINER");
+    const response = await withTestAuth(
+      request(app).patch("/api/v1/articles/550e8400-e29b-41d4-a716-446655440000/submit"),
+      { userId: "trainer-1", role: "TRAINER" },
+    );
 
     expect(response.status).toBe(200);
     expect(mockContainer.submitArticleUseCase.execute).toHaveBeenCalledWith("550e8400-e29b-41d4-a716-446655440000");
@@ -182,10 +166,10 @@ describe("articleRouter auth interactions HTTP", () => {
     });
 
     const app = await createTestApp();
-    const response = await request(app)
-      .patch("/api/v1/articles/550e8400-e29b-41d4-a716-446655440000/approve")
-      .set("x-test-user-id", "editor-1")
-      .set("x-test-role", "EDITOR");
+    const response = await withTestAuth(
+      request(app).patch("/api/v1/articles/550e8400-e29b-41d4-a716-446655440000/approve"),
+      { userId: "editor-1", role: "EDITOR" },
+    );
 
     expect(response.status).toBe(200);
     expect(mockContainer.approveArticleUseCase.execute).toHaveBeenCalledWith({
@@ -207,11 +191,12 @@ describe("articleRouter auth interactions HTTP", () => {
     });
 
     const app = await createTestApp();
-    const response = await request(app)
-      .patch("/api/v1/articles/550e8400-e29b-41d4-a716-446655440000/reject")
-      .set("x-test-user-id", "admin-1")
-      .set("x-test-role", "ADMIN")
-      .send({ rejectionReason: "Needs revision" });
+    const response = await withTestAuth(
+      request(app)
+        .patch("/api/v1/articles/550e8400-e29b-41d4-a716-446655440000/reject")
+        .send({ rejectionReason: "Needs revision" }),
+      { userId: "admin-1", role: "ADMIN" },
+    );
 
     expect(response.status).toBe(200);
     expect(mockContainer.rejectArticleUseCase.execute).toHaveBeenCalledWith({
@@ -225,11 +210,12 @@ describe("articleRouter auth interactions HTTP", () => {
 
   it("PATCH /api/v1/articles/:id/reject rejects invalid body", async () => {
     const app = await createTestApp();
-    const response = await request(app)
-      .patch("/api/v1/articles/550e8400-e29b-41d4-a716-446655440000/reject")
-      .set("x-test-user-id", "admin-1")
-      .set("x-test-role", "ADMIN")
-      .send({ rejectionReason: "" });
+    const response = await withTestAuth(
+      request(app)
+        .patch("/api/v1/articles/550e8400-e29b-41d4-a716-446655440000/reject")
+        .send({ rejectionReason: "" }),
+      { userId: "admin-1", role: "ADMIN" },
+    );
 
     expect(response.status).toBe(422);
     expect(response.body.message).toBe("Validation error");
@@ -242,10 +228,10 @@ describe("articleRouter auth interactions HTTP", () => {
     });
 
     const app = await createTestApp();
-    const response = await request(app)
-      .delete("/api/v1/articles/550e8400-e29b-41d4-a716-446655440000")
-      .set("x-test-user-id", "author-1")
-      .set("x-test-role", "EDITOR");
+    const response = await withTestAuth(
+      request(app).delete("/api/v1/articles/550e8400-e29b-41d4-a716-446655440000"),
+      { userId: "author-1", role: "EDITOR" },
+    );
 
     expect(response.status).toBe(200);
     expect(mockContainer.deleteArticleUseCase.execute).toHaveBeenCalledWith({
@@ -258,10 +244,10 @@ describe("articleRouter auth interactions HTTP", () => {
 
   it("PATCH /api/v1/articles/:id/approve rejects trainer without review permission", async () => {
     const app = await createTestApp();
-    const response = await request(app)
-      .patch("/api/v1/articles/550e8400-e29b-41d4-a716-446655440000/approve")
-      .set("x-test-user-id", "trainer-1")
-      .set("x-test-role", "TRAINER");
+    const response = await withTestAuth(
+      request(app).patch("/api/v1/articles/550e8400-e29b-41d4-a716-446655440000/approve"),
+      { userId: "trainer-1", role: "TRAINER" },
+    );
 
     expect(response.status).toBe(403);
     expect(response.body.message).toBe("Forbidden");

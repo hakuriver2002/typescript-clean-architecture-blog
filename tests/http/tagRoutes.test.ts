@@ -1,5 +1,6 @@
 import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { createAuthMiddlewareMock, withTestAuth } from "../helpers/httpAuthMocks";
 import { createHttpTestApp } from "../helpers/httpTestApp";
 
 const mockContainer = {
@@ -16,26 +17,7 @@ vi.mock("../../src/infrastructure/container", () => ({
   container: mockContainer,
 }));
 
-vi.mock("../../src/interface/http/middlewares/authMiddleware", () => {
-  return {
-    authMiddleware: (req: any, res: any, next: any) => {
-      const userId = req.header("x-test-user-id");
-      const role = req.header("x-test-role");
-
-      if (!userId || !role) {
-        return res.status(401).json({ message: "Unauthorized" });
-      }
-
-      req.user = {
-        id: userId,
-        email: "tester@example.com",
-        role,
-      };
-
-      next();
-    },
-  };
-});
+vi.mock("../../src/interface/http/middlewares/authMiddleware", () => createAuthMiddlewareMock());
 
 async function createTestApp() {
   return createHttpTestApp(
@@ -85,11 +67,10 @@ describe("tagRouter HTTP", () => {
 
   it("POST /api/v1/tags requires admin permission", async () => {
     const app = await createTestApp();
-    const response = await request(app)
-      .post("/api/v1/tags")
-      .set("x-test-user-id", "member-1")
-      .set("x-test-role", "MEMBER")
-      .send({ name: "Karatedo" });
+    const response = await withTestAuth(
+      request(app).post("/api/v1/tags").send({ name: "Karatedo" }),
+      { userId: "member-1", role: "MEMBER" },
+    );
 
     expect(response.status).toBe(403);
     expect(response.body.message).toBe("Forbidden");

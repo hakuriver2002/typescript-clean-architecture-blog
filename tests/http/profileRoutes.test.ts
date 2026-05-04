@@ -1,5 +1,6 @@
 import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { createAuthMiddlewareMock, withTestAuth } from "../helpers/httpAuthMocks";
 import { createHttpTestApp } from "../helpers/httpTestApp";
 
 const mockContainer = {
@@ -14,26 +15,7 @@ vi.mock("../../src/infrastructure/container", () => ({
   container: mockContainer,
 }));
 
-vi.mock("../../src/interface/http/middlewares/authMiddleware", () => {
-  return {
-    authMiddleware: (req: any, res: any, next: any) => {
-      const userId = req.header("x-test-user-id");
-      const role = req.header("x-test-role");
-
-      if (!userId || !role) {
-        return res.status(401).json({ message: "Unauthorized" });
-      }
-
-      req.user = {
-        id: userId,
-        email: "tester@example.com",
-        role,
-      };
-
-      next();
-    },
-  };
-});
+vi.mock("../../src/interface/http/middlewares/authMiddleware", () => createAuthMiddlewareMock());
 
 async function createTestApp() {
   return createHttpTestApp(
@@ -60,10 +42,7 @@ describe("profileRouter HTTP", () => {
     });
 
     const app = await createTestApp();
-    const response = await request(app)
-      .get("/api/v1/profile/me")
-      .set("x-test-user-id", "user-1")
-      .set("x-test-role", "MEMBER");
+    const response = await withTestAuth(request(app).get("/api/v1/profile/me"));
 
     expect(response.status).toBe(200);
     expect(mockContainer.getMyProfileUseCase.execute).toHaveBeenCalledWith("user-1");
@@ -83,11 +62,11 @@ describe("profileRouter HTTP", () => {
     });
 
     const app = await createTestApp();
-    const response = await request(app)
-      .patch("/api/v1/profile/me")
-      .set("x-test-user-id", "user-1")
-      .set("x-test-role", "MEMBER")
-      .send({ fullName: "Updated Name", avatarUrl: "https://example.com/avatar.jpg" });
+    const response = await withTestAuth(
+      request(app)
+        .patch("/api/v1/profile/me")
+        .send({ fullName: "Updated Name", avatarUrl: "https://example.com/avatar.jpg" }),
+    );
 
     expect(response.status).toBe(200);
     expect(mockContainer.updateMyProfileUseCase.execute).toHaveBeenCalledWith({
@@ -104,11 +83,11 @@ describe("profileRouter HTTP", () => {
     });
 
     const app = await createTestApp();
-    const response = await request(app)
-      .patch("/api/v1/profile/me/password")
-      .set("x-test-user-id", "user-1")
-      .set("x-test-role", "MEMBER")
-      .send({ currentPassword: "oldpassword", newPassword: "newpassword123" });
+    const response = await withTestAuth(
+      request(app)
+        .patch("/api/v1/profile/me/password")
+        .send({ currentPassword: "oldpassword", newPassword: "newpassword123" }),
+    );
 
     expect(response.status).toBe(200);
     expect(mockContainer.changeMyPasswordUseCase.execute).toHaveBeenCalledWith({
@@ -129,10 +108,9 @@ describe("profileRouter HTTP", () => {
     });
 
     const app = await createTestApp();
-    const response = await request(app)
-      .get("/api/v1/profile/me/bookmarks?page=1&pageSize=10")
-      .set("x-test-user-id", "user-1")
-      .set("x-test-role", "MEMBER");
+    const response = await withTestAuth(
+      request(app).get("/api/v1/profile/me/bookmarks?page=1&pageSize=10"),
+    );
 
     expect(response.status).toBe(200);
     expect(mockContainer.listMyBookmarkedArticlesUseCase.execute).toHaveBeenCalledWith({

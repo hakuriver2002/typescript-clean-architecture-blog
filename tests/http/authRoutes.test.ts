@@ -1,5 +1,10 @@
 import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  createAuthMiddlewareMock,
+  createAuthRateLimitMocks,
+  withTestAuth,
+} from "../helpers/httpAuthMocks";
 import { createHttpTestApp } from "../helpers/httpTestApp";
 
 const mockContainer = {
@@ -17,33 +22,9 @@ vi.mock("../../src/infrastructure/container", () => ({
   container: mockContainer,
 }));
 
-vi.mock("../../src/interface/http/middlewares/authMiddleware", () => {
-  return {
-    authMiddleware: (req: any, res: any, next: any) => {
-      const userId = req.header("x-test-user-id");
-      const role = req.header("x-test-role");
+vi.mock("../../src/interface/http/middlewares/authMiddleware", () => createAuthMiddlewareMock());
 
-      if (!userId || !role) {
-        return res.status(401).json({ message: "Unauthorized" });
-      }
-
-      req.user = {
-        id: userId,
-        email: "tester@example.com",
-        role,
-      };
-
-      next();
-    },
-  };
-});
-
-vi.mock("../../src/interface/http/middlewares/authRateLimit", () => {
-  return {
-    authGeneralLimiter: (_req: any, _res: any, next: any) => next(),
-    authLoginLimiter: (_req: any, _res: any, next: any) => next(),
-  };
-});
+vi.mock("../../src/interface/http/middlewares/authRateLimit", () => createAuthRateLimitMocks());
 
 async function createTestApp() {
   return createHttpTestApp(
@@ -147,11 +128,11 @@ describe("authRouter HTTP", () => {
     mockContainer.logoutUseCase.execute.mockResolvedValue(undefined);
 
     const app = await createTestApp();
-    const response = await request(app)
-      .post("/api/v1/auth/logout")
-      .set("x-test-user-id", "user-1")
-      .set("x-test-role", "MEMBER")
-      .set("Cookie", ["refresh_token=refresh-token"]);
+    const response = await withTestAuth(
+      request(app)
+        .post("/api/v1/auth/logout")
+        .set("Cookie", ["refresh_token=refresh-token"]),
+    );
 
     expect(response.status).toBe(200);
     expect(mockContainer.logoutUseCase.execute).toHaveBeenCalledWith("refresh-token");
@@ -170,10 +151,7 @@ describe("authRouter HTTP", () => {
     });
 
     const app = await createTestApp();
-    const response = await request(app)
-      .get("/api/v1/auth/me")
-      .set("x-test-user-id", "user-1")
-      .set("x-test-role", "MEMBER");
+    const response = await withTestAuth(request(app).get("/api/v1/auth/me"));
 
     expect(response.status).toBe(200);
     expect(mockContainer.getMeUseCase.execute).toHaveBeenCalledWith("user-1");
